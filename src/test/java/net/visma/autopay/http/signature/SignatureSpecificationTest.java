@@ -191,6 +191,61 @@ class SignatureSpecificationTest {
     }
 
     @Test
+    @DisplayName("Selective Covered Components using rsa-pss-sha256")
+    void selectiveCoveredComponentsRsaPss256() throws Exception {
+        // setup
+        var signatureLabel = "sig-b32";
+        var keyId = ObjectMother.getRsaPssKeyId();
+        var algorithm = SignatureAlgorithm.RSA_PSS_SHA_256;
+        var tag = "header-example";
+
+        SignatureParameters signatureParams = SignatureParameters.builder()
+                .created(1618884473)
+                .keyId(keyId)
+                .tag(tag)
+                .algorithm(algorithm)
+                .build();
+        var signatureComponents = SignatureComponents.builder()
+                .authority()
+                .header("Content-Digest")
+                .queryParam("Pet")
+                .build();
+        var signatureSpec = SignatureSpec.builder()
+                .signatureLabel(signatureLabel)
+                .privateKey(ObjectMother.getRsaPssPrivateKey())
+                .context(requestContext)
+                .parameters(signatureParams)
+                .components(signatureComponents)
+                .build();
+        var publicKeyInfo = PublicKeyInfo.builder()
+                .algorithm(algorithm)
+                .publicKey(ObjectMother.getRsaPssPublicKey())
+                .build();
+        var expectedSignatureInput = "sig-b32=(\"@authority\" \"content-digest\" \"@query-param\";name=\"Pet\");created=1618884473;keyid=\"test-key-rsa-pss\"" +
+                ";tag=\"header-example\"";
+
+        // execute
+        var signatureResult = signatureSpec.sign();
+
+        // verify signature input
+        assertThat(signatureResult.getSignatureInput()).isEqualTo(expectedSignatureInput);
+
+        // verify self signature
+        var verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, signatureResult);
+        verificationSpec.verify();
+
+        // verify example signature
+        var validSignature = "sig-b32=:jCftOuAB8ubMNzLXOFQ+AOD+t3MtV6c1TLssCboUyJunLkz7K" +
+                "x52dnS2cwNakfdD4DkhhXEuWUdrXMlAuyHkmFALazL6ds5sGu7YSd6XehrFaE7fJqL9tgrq" +
+                "0Mn/mbQ383DRB0m6pGFqZHKht6h1CgnpYxcWln3hFobkM2mvE34C0W27EMymrn83337aDLQ" +
+                "X0RpMjD8hrlar9PFpoKqrk2D1LFe5ySRM5WkWsbCqYQeuo7nUyw552OY5Ye1GLpDYmcIh1o" +
+                "jI5IXIqVZ5/FKxhJ2Sp6ss8bvIV5SsgMxH97HTBevTtvfq1/ZJm1fzYRqNAUY2cr+Bot/tu" +
+                "RhKbMtQeA==:";
+        verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, expectedSignatureInput, validSignature);
+        verificationSpec.verify();
+    }
+
+    @Test
     @DisplayName("Full Coverage using rsa-pss-sha512")
     void fullCoverageRsaPss() throws Exception {
         // setup
@@ -234,6 +289,53 @@ class SignatureSpecificationTest {
                 "v6ULbMFkl+V5B1TP/yPViV7KsLNmvKiLJH1pFkh/aYA2HXXZzNBXmIkoQoLd7YfW91kE9o/CCoC1xMy7JA" +
                 "1ipwvKvfrs65ldmlu9bpG6A9BmzhuzF8Eim5f8ui9eH8LZH896+QIF61ka39VBrohr9iyMUJpvRX2Zbhl5" +
                 "ZJzSRxpJyoEZAFL2FUo5fTIztsDZKEgM4cUA==:";
+        verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, expectedSignatureInput, validSignature);
+        verificationSpec.verify();
+    }
+
+    @Test
+    @DisplayName("Full Coverage using rsa-pss-sha256")
+    void fullCoverageRsaPss256() throws Exception {
+        // setup
+        var signatureLabel = "sig-b33";
+        var keyId = ObjectMother.getRsaPssKeyId();
+        var algorithm = SignatureAlgorithm.RSA_PSS_SHA_256;
+
+        SignatureParameters signatureParams = getSignatureParameters(keyId, algorithm);
+        var signatureComponents = SignatureComponents.builder()
+                .header("Date")
+                .method().path().query().authority()
+                .headers("Content-Type", "Content-Digest", "Content-Length")
+                .build();
+        var signatureSpec = SignatureSpec.builder()
+                .signatureLabel(signatureLabel)
+                .privateKey(ObjectMother.getRsaPssPrivateKey())
+                .context(requestContext)
+                .parameters(signatureParams)
+                .components(signatureComponents)
+                .build();
+        var publicKeyInfo = PublicKeyInfo.builder()
+                .algorithm(algorithm)
+                .publicKey(ObjectMother.getRsaPssPublicKey())
+                .build();
+        var expectedSignatureInput = "sig-b33=(\"date\" \"@method\" \"@path\" \"@query\" \"@authority\" \"content-type\" \"content-digest\" " +
+                "\"content-length\");created=1618884473;keyid=\"test-key-rsa-pss\"";
+
+        // execute
+        var signatureResult = signatureSpec.sign();
+
+        // verify signature input
+        assertThat(signatureResult.getSignatureInput()).isEqualTo(expectedSignatureInput);
+
+        // verify self signature
+        var verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, signatureResult);
+        verificationSpec.verify();
+
+        // verify example signature
+        var validSignature = "sig-b33=:W/poinCycaqadUPb/BB3aLF7bIm7S0y/2xbuwPHQktwfs+GFvyCmUpyy6Ed5Lvbr9I9gSq" +
+                "4cmjzv8hpDy0Hi2EU8s9IxNG0We72acSzf2lFGt9RqhnSz/JVxcEZEm9VDp73vldcH+zPy0A3pkzTpy0eHpepXfcIosp" +
+                "cC7WJh1F1YCxGbZtXU1b7vLKo4IpD+lS1wD/kbzdCMkbgQTBCifjvzIosryygFhDAnkSpde0Juv7S/fGZFGDGDVm48z6" +
+                "Y2lGlfdhKLuT3tQiSido88tYQy9xaiw3u87QujHWQ0O4bcnk476edDeLIvCX0S2vFJSXoc4ZzyR9Vvr5xoRHGe9w==:";
         verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, expectedSignatureInput, validSignature);
         verificationSpec.verify();
     }
