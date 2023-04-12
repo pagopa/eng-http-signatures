@@ -51,7 +51,7 @@ jobs:
         uses: pagopa/github-actions-template/maven-release@483a0ceb9ef07dee34f7ce0de5b689cc3043eac4
         with:
           semver: ${{ needs.setup.outputs.semver }}
-          github_token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Make Package
         id: package
