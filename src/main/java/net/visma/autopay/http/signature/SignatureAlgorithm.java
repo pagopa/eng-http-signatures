@@ -36,6 +36,15 @@ import java.util.stream.Stream;
  *      HTTP Signature Algorithms Registry</a>
  */
 public enum SignatureAlgorithm {
+
+    /**
+     * RSASSA-PSS using SHA-256
+     *
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-httpbis-message-signatures-13.html#name-rsassa-pss-using-sha-512">RSASSA-PSS using SHA-256</a>
+     */
+    RSA_PSS_SHA_256("rsa-pss-sha256", "RSASSA-PSS", SignatureKeyAlgorithm.RSA, new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA512, 32, 1)),
+
+
     /**
      * RSASSA-PSS using SHA-512
      *

@@ -1,5 +1,7 @@
 # HTTP Message Signatures
 
+Fork of the Visma Autopay http-signatures (https://github.com/Visma-AutoPay/http-signatures)
+
 HTTP Message Signatures provide a mechanism for end-to-end integrity and
 authenticity for components of an HTTP message.
 
@@ -18,7 +20,7 @@ Javadoc is available at https://visma-autopay.github.io/http-signatures/
 Maven dependency is
 ```xml
 <dependency>
-    <groupId>net.visma.autopay</groupId>
+    <groupId>org.pagopa.tech</groupId>
     <artifactId>http-signatures</artifactId>
     <version>1.1.0</version>
 </dependency>
