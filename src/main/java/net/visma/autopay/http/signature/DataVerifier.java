@@ -21,6 +21,11 @@
  */
 package net.visma.autopay.http.signature;
 
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.util.Base64URL;
+
 import javax.crypto.Mac;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -28,7 +33,9 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * Class for verifying signatures
@@ -69,11 +76,29 @@ final class DataVerifier {
     private static boolean verifyAsymmetric(byte[] data, byte[] signature, PublicKey publicKey, SignatureAlgorithm algorithm)
             throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, java.security.SignatureException {
 
-        var signatureObject = DataSigner.createSignatureObject(publicKey, algorithm);
-        signatureObject.initVerify(publicKey);
-        signatureObject.update(data);
+        if (algorithm.equals(SignatureAlgorithm.RSA_PSS_SHA_256)) {
+            JWSHeader header = new JWSHeader(JWSAlgorithm.PS256);
+            RSASSAVerifier rsassaVerifier = new RSASSAVerifier((RSAPublicKey) publicKey);
+            try {
+                return rsassaVerifier.verify(header, data, Base64URL.encode(signature));
+            } catch (JOSEException e) {
+                throw new RuntimeException(e);
+            }
+        } else if  (algorithm.equals(SignatureAlgorithm.RSA_PSS_SHA_512)) {
+            JWSHeader header = new JWSHeader(JWSAlgorithm.PS512);
+            RSASSAVerifier rsassaVerifier = new RSASSAVerifier((RSAPublicKey) publicKey);
+            try {
+                return rsassaVerifier.verify(header, data, Base64URL.encode(signature));
+            } catch (JOSEException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            var signatureObject = DataSigner.createSignatureObject(publicKey, algorithm);
+            signatureObject.initVerify(publicKey);
+            signatureObject.update(data);
+            return signatureObject.verify(signature);
+        }
 
-        return signatureObject.verify(signature);
     }
 
     private static boolean verifyHmac(byte[] data, byte[] signature, PublicKey publicKey, SignatureAlgorithm algorithm) throws NoSuchAlgorithmException,

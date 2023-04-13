@@ -42,7 +42,7 @@ public enum SignatureAlgorithm {
      *
      * @see <a href="https://www.ietf.org/archive/id/draft-ietf-httpbis-message-signatures-13.html#name-rsassa-pss-using-sha-512">RSASSA-PSS using SHA-256</a>
      */
-    RSA_PSS_SHA_256("rsa-pss-sha256", "RSASSA-PSS", SignatureKeyAlgorithm.RSA, new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA512, 32, 1)),
+    RSA_PSS_SHA_256("rsa-pss-sha256", "RSASSA-PSS", SignatureKeyAlgorithm.RSA, new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 32, 1)),
 
 
     /**
@@ -122,7 +122,7 @@ public enum SignatureAlgorithm {
      * @see <a href="https://www.ietf.org/archive/id/draft-ietf-httpbis-message-signatures-13.html#name-initial-contents">
      *      Algorithm names in the Algorithms Registry</a>
      */
-    static SignatureAlgorithm fromIdentifier(String identifier) {
+     public static SignatureAlgorithm fromIdentifier(String identifier) {
         return id2Enum.get(identifier);
     }
 
