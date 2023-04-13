@@ -21,6 +21,9 @@
  */
 package net.visma.autopay.http.signature;
 
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jwt.JWTParser;
 import net.visma.autopay.http.structured.StructuredDictionary;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.SignatureSpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -36,6 +39,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.security.Provider;
 import java.security.Security;
+import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
@@ -235,12 +239,12 @@ class SignatureSpecificationTest {
         verificationSpec.verify();
 
         // verify example signature
-        var validSignature = "sig-b32=:jCftOuAB8ubMNzLXOFQ+AOD+t3MtV6c1TLssCboUyJunLkz7K" +
-                "x52dnS2cwNakfdD4DkhhXEuWUdrXMlAuyHkmFALazL6ds5sGu7YSd6XehrFaE7fJqL9tgrq" +
-                "0Mn/mbQ383DRB0m6pGFqZHKht6h1CgnpYxcWln3hFobkM2mvE34C0W27EMymrn83337aDLQ" +
-                "X0RpMjD8hrlar9PFpoKqrk2D1LFe5ySRM5WkWsbCqYQeuo7nUyw552OY5Ye1GLpDYmcIh1o" +
-                "jI5IXIqVZ5/FKxhJ2Sp6ss8bvIV5SsgMxH97HTBevTtvfq1/ZJm1fzYRqNAUY2cr+Bot/tu" +
-                "RhKbMtQeA==:";
+        var validSignature = "sig-b32=:kFTUsoTOGSysLufj8i9PPD9oUbwRMYr" +
+                "d2aqlWvM79/7rX+Ye9JxWqGmQIkWix1YeTn6kA5p3n+PNjgq0CZw3Xqzp7bO0jos" +
+                "FE4Zd1bsTHTruSnxD2U6munFFL8X6DsyILZ5hgqFaatewdlGgjCBtVVEJkHeScIHGm/7n" +
+                "cfndHyVOOUfwd3xaeDzRzD+r0bSytMlXAoExIVCsB8waec8+KfCfghg2mxirlCXZIiDKNrj" +
+                "zO7uTGoTP7b21b3QzSJHUymxrWZq9VM3sbNsAQCkXCRrfiUi51XHC24P1CUcKPgQL1frcK1D8+" +
+                "6+MXu3+RKqtu+r0sfuMdnH8zalHKa1OJA==:";
         verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, expectedSignatureInput, validSignature);
         verificationSpec.verify();
     }
@@ -332,10 +336,101 @@ class SignatureSpecificationTest {
         verificationSpec.verify();
 
         // verify example signature
-        var validSignature = "sig-b33=:W/poinCycaqadUPb/BB3aLF7bIm7S0y/2xbuwPHQktwfs+GFvyCmUpyy6Ed5Lvbr9I9gSq" +
-                "4cmjzv8hpDy0Hi2EU8s9IxNG0We72acSzf2lFGt9RqhnSz/JVxcEZEm9VDp73vldcH+zPy0A3pkzTpy0eHpepXfcIosp" +
-                "cC7WJh1F1YCxGbZtXU1b7vLKo4IpD+lS1wD/kbzdCMkbgQTBCifjvzIosryygFhDAnkSpde0Juv7S/fGZFGDGDVm48z6" +
-                "Y2lGlfdhKLuT3tQiSido88tYQy9xaiw3u87QujHWQ0O4bcnk476edDeLIvCX0S2vFJSXoc4ZzyR9Vvr5xoRHGe9w==:";
+        var validSignature = "sig-b33=:BijcKVVLcsKhrLYgudfpFXgEZtSkpShKlP1Zz6URXQt41uQCxz1BweCqnFWlQFLdLUk0NTN+" +
+                "9ox3RozqR0HzU/POqoFURkBgg8Ukx3j0JFu0yKoGhT5/itKNLTBGvMsESxj17PmVNZv0rtWRvI4GDa9RxYJARlS/QXui3ikNI" +
+                "p9T7FrZ4jpZHzlSVncSwCZpwkQA9kWrx9IRQ4tXroPGAA2VA5wAKQuZm8J5TLiNwA0edABhO87kHzldB8DSjcIq55TEJDVNH37W78" +
+                "ceBcKkbdWGG3e9EpI6WpIxQW982DqazLuBLmlOlp/e2kpq1h88Cr0u3mjPB4Jd95h4vSOATQ==:";
+        verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, expectedSignatureInput, validSignature);
+        verificationSpec.verify();
+    }
+
+    @Test
+    @DisplayName("Full Coverage using rsa-pss-sha256")
+    void fullCoverageRsaPss2562() throws Exception {
+        // setup
+        var signatureLabel = "sig1";
+        var keyId = "sha256-A3OhKGLYwSvdJ2txHi_SGQ3G-sHLh2Ibu91ErqFx_58";
+        var algorithm = SignatureAlgorithm.RSA_PSS_SHA_256;
+
+        Map<String, String> requestHeaders =
+                Map.of(
+                        "Content-Digest", "sha-256=:cpyRqJ1VhoVC+MSs9fq4/4wXs4c46EyEFriskys43Za=:",
+                        "x-pagopa-lollipop-original-url",
+                        "https://api-app.io.pagopa.it/first-lollipop/sign",
+                        "x-pagopa-lollipop-original-method", "POST");
+
+        SignatureParameters signatureParams = SignatureParameters.builder()
+                .created(1678814391)
+                .nonce("aNonce")
+                .visibleAlgorithm(algorithm)
+                .algorithm(algorithm)
+                .keyId(keyId)
+                                .build();
+        var signatureComponents = SignatureComponents.builder()
+                .headers("Content-Digest", "x-pagopa-lollipop-original-method", "x-pagopa-lollipop-original-url")
+                .build();
+        var signatureSpec = SignatureSpec.builder()
+                .signatureLabel(signatureLabel)
+                .privateKey(ObjectMother.getRsaPssPrivateKey())
+                .context(SignatureContext.builder().headers(requestHeaders).build())
+                .parameters(signatureParams)
+                .components(signatureComponents)
+                .build();
+        var publicKeyInfo = PublicKeyInfo.builder()
+                .algorithm(algorithm)
+                .publicKey(ObjectMother.getRsaPssPublicKey())
+                .build();
+        var expectedSignatureInput =
+        "sig1=(\"content-digest\" \"x-pagopa-lollipop-original-method\""
+                + " \"x-pagopa-lollipop-original-url\");created=1678814391;" +
+                "nonce=\"aNonce\";alg=\"rsa-pss-sha256\";keyid=\"sha256-A3OhKGLYwSvdJ2txHi_SGQ3G-sHLh2Ibu91ErqFx_58\"";
+
+        // execute
+        var signatureResult = signatureSpec.sign();
+
+
+        new String(Base64.getEncoder().encode(JWK.parse("{" +
+                "  \"kty\": \"RSA\"," +
+                "  \"kid\": \"test-key-rsa-pss\"," +
+                "  \"p\": \"5V-6ISI5yEaCFXm-fk1EM2xwAWekePVCAyvr9QbTlFOCZwt9WwjUjhtKRus" +
+                "  i5Uq-IYZ_tq2WRE4As4b_FHEMtp2AER43IcvmXPqKFBoUktVDS7dThIHrsnRi1U7d" +
+                "  HqVdwiMEMe5jxKNgnsKLpnq-4NyhoS6OeWu1SFozG9J9xQk\"," +
+                "  \"q\": \"w-wIde17W5Y0Cphp3ZZ0uM8OUq1AkrV2IKauqYHaDxAT32EM4ci2MMER2nI" +
+                "  UEo4g_42lW0zYouFFqONwv0-HyOsgPpdSqKRC5WLgn0VXabjaNcy6KhNPXeJ0Agtq" +
+                "  diDwPeJ2_L_eKwNWQ43RfdQBUquAwSd7SEmmQ8sViqB628M\"," +
+                "  \"d\": \"lAfIqfpCYomVShfAKnwf2lD9I0wKjkHsCtZCif4kAlwQqqW6N-tIL3bdOR-" +
+                "  VWf0Q1ZBIDtpO91UrG7pansyrPERbNrRJlPiYEyPTHkCT1nD-l2isuiyGLNBNnFoK" +
+                "  fBgA4KAbPJZQatFIV9Cn34JSHnpN5-2ehreGBYHtkwHFtlmzeF3yu5bqRcqOhx8lk" +
+                "  YmBzDAEUFyyXjknU5-WjAT9DzuG0MpOTkcU1EnjnIjyVBZLUB5Lxm8puyq8hH8B_E" +
+                "  5LNC-1oc8j-tDy98UvRTTiYvZvs87cGCFxg0LijNhg7CE3g9piNqB6DzMgA9MHSOw" +
+                "  cElVtfKdYfo4H3OHZXsSmEQ\"," +
+                "  \"e\": \"AQAB\"," +
+                "  \"qi\": \"jRAqfYi_tKCjhP9eM0N2XaRlNeoYCTx06GlSLD8d0zc4ZZuEePY10LMGWI" +
+                "  6Y_JC0CvvvQYhNa9sAj4hFjIVLsWeTplVVUezGO1ofLW4kYWVpnMpHgAY1pRM4kyz" +
+                "  o1p3MKYY8DE1BA4KqhSOfhdGs6Ov3Dfj0migZeE7Fu7yc7Fc\"," +
+                "  \"dp\": \"otDolkxtJ7Sk8gmRJqZCGx6GAvlGznWJfibXPv6xgUAl-G83dD84YgcNGn" +
+                "  oeMxRzEekfDtT5LVMRPF4_AoucsqPqHDyOdfb-dlGBYfOBVxj6w-xF5HE0lV_4J-H" +
+                "  rI63Od9fTSn4lY5d1JjyCVJIcnBEAyiD6EUZbUBh23vDzRcE\"," +
+                "  \"dq\": \"iZE1S6CpqmBoQDxOsXGQmaeBdhoCqkDSJhEDuS_dLhBq88FQa0UkcE1QvO" +
+                "  K3J2Q21VnfDqGBx7SH1hOFOj-cpz45kNluB832ztxDvnHQ9AIA7h_HY_3VD6YPMNR" +
+                "  VN4bfSYS3abdLR0Z7jsmInGJ9X0_fA0E2tkZIgXeas5EFU0M\"," +
+                "  \"n\": \"r4tmm3r20Wd_PbqvP1s2-QEtvpuRaV8Yq40gjUR8y2Rjxa6dpG2GXHbPfvM" +
+                "  s8ct-Lh1GH45x28Rw3Ry53mm-oAXjyQ86OnDkZ5N8lYbggD4O3w6M6pAvLkhk95An" +
+                "  dTrifbIFPNU8PPMO7OyrFAHqgDsznjPFmTOtCEcN2Z1FpWgchwuYLPL-Wokqltd11" +
+                "  nqqzi-bJ9cvSKADYdUAAN5WUtzdpiy6LbTgSxP7ociU4Tn0g5I6aDZJ7A8Lzo0KSy" +
+                "  ZYoA485mqcO0GVAdVw9lq4aOT9v6d-nb4bnNkQVklLQ3fVAvJm-xdDOp9LCNCN48V" +
+                "  2pnDOkFV6-U9nV5oyc6XI2w\"" +
+                "}").toPublicJWK().toJSONString().getBytes()));
+
+        // verify signature input
+        assertThat(signatureResult.getSignatureInput()).isEqualTo(expectedSignatureInput);
+
+        // verify self signature
+        var verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, signatureResult);
+        verificationSpec.verify();
+
+        // verify example signature
+        var validSignature = "sig1=:Jf7v1wqk4bWDZzS0aqbA8VIYxBD07KkrhVmf8ncqsCCpgtggKzVpuwzsxJGDaxqw1sQ/4/9q3JviW7cV0Iq1EbFPiXkW9j9F+JPNt+pPZCjTrcHzKSZ+Yz+MYttSS/umR0YdCPdkObu28HyZ1hcTgt2xSqyYpjxX9CPcjHn42tVJBF6KfmxnAdcYH3vjFj30QPRyMUjQEH9FEQItcxP7H4P9vXsHsKi2o3NFwgl8Lq5zCOMURbM4BtgxJwVh97MJzqPVJEq3isEa60hquPIdIjPoL9tgMEZkbERHZzqg3KivS9cjdQ7VsWWdwu8S2mPbRVK7SAyhEpk+hnmpxg24Uw==:";
         verificationSpec = getVerificationSpec(signatureLabel, keyId, publicKeyInfo, expectedSignatureInput, validSignature);
         verificationSpec.verify();
     }
