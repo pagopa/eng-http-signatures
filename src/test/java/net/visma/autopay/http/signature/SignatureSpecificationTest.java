@@ -21,9 +21,6 @@
  */
 package net.visma.autopay.http.signature;
 
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jwt.JWTParser;
 import net.visma.autopay.http.structured.StructuredDictionary;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.SignatureSpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
